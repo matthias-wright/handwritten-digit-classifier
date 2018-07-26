@@ -17,7 +17,7 @@ def get_data(path):
     return X, Y
 
 
-X_train, Y_train = get_data('mnist_train.csv')
-X_test, Y_test = get_data('mnist_test.csv')
+X_train, Y_train = get_data('../mnist_train.csv')
+X_test, Y_test = get_data('../mnist_test.csv')
 
 model.model(X_train, Y_train, X_test, Y_test, layers=[X_train.shape[0], 500, 300, 100, 10], learning_rate=0.01, epochs=20, mb_size=128)

@@ -3,8 +3,10 @@
 Deep neural network written in Python with NumPy and trained on the MNIST dataset: http://yann.lecun.com/exdb/mnist/.
 
 ## Description
-Architecture: 3 hidden layers with 500, 300, and 100 neurons respectively
-Optimization: mini batch gradient descent
+* Architecture: 3 hidden layers with 500, 300, and 100 neurons respectively
+* Activation function: ReLU for hidden layers, softmax for output layer
+* Optimization: mini batch gradient descent, mini-batch size = 128
+* Features: Gradient checking
 
 
 ## Built With

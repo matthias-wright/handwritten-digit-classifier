@@ -127,6 +127,42 @@ def update_parameters(parameters, gradients, learning_rate):
     return parameters
 
 
+def gradient_check(X, Y, parameters, gradients, epsilon):
+    """
+    Implements gradient checking in order to validate the backprop routine.
+    :param X: data (single example)
+    :param Y: true labels
+    :param parameters: weights and bias units
+    :param gradients: partial derivatives of the weights and bias units
+    :param epsilon: the shift to the input to approximate the gradient
+    :return: delta: the difference between the approximation and the computed gradient
+    """
+    parameters_vector, shapes = utils.roll_out_dict(parameters)
+    gradient, _ = utils.roll_out_dict(gradients)
+    n = parameters_vector.shape[0]
+    Cost_plus = np.zeros((n, 1))
+    Cost_minus = np.zeros((n, 1))
+    approx_gradient = np.zeros((n, 1))
+
+    for i in range(n):
+        theta_plus = np.copy(parameters_vector)
+        theta_plus[i][0] = theta_plus[i][0] + epsilon
+        A_out, _ = forward_propagation(X, utils.roll_in_vector(theta_plus, shapes))
+        Cost_plus[i] = utils.cross_entropy(A_out, Y)
+
+        theta_minus = np.copy(parameters_vector)
+        theta_minus[i][0] = theta_minus[i][0] - epsilon
+        A_out, _ = forward_propagation(X, utils.roll_in_vector(theta_minus, shapes))
+        Cost_minus[i] = utils.cross_entropy(A_out, Y)
+
+        approx_gradient[i] = (Cost_plus[i] - Cost_minus[i]) / float(2 * epsilon)
+
+    numerator = np.linalg.norm(gradient - approx_gradient)
+    denominator = np.linalg.norm(gradient) + np.linalg.norm(approx_gradient)
+    delta = numerator/float(denominator)
+    return delta
+
+
 def test(X, Y, parameters):
     """
     Tests the accuracy of the classifier.
