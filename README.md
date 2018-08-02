@@ -5,8 +5,8 @@ Deep neural network written in Python with NumPy and trained on the MNIST datase
 ## Description
 * Architecture: 3 hidden layers with 500, 300, and 100 neurons respectively
 * Activation function: ReLU for hidden layers, softmax for output layer
-* Optimization: mini batch gradient descent, mini-batch size = 128
-* Regularization: Inverted Dropout (keep_prob = 0.7)
+* Optimization: Adam optimization algorithm, mini-batch size = 128
+* Regularization: Inverted Dropout (keep_prob = 0.8)
 * Features: Gradient checking
 
 

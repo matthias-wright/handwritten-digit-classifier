@@ -140,6 +140,56 @@ def update_parameters(parameters, gradients, learning_rate):
     return parameters
 
 
+def init_adam(parameters):
+    """
+    Initializes v and s for the the Adam optimization algorithm.
+    :param parameters: weights and bias units
+    :return: v: dictionary for the moving averages of the gradients,
+             s: dictionary for the moving averages of the squared gradients
+    """
+    L = len(parameters) // 2
+    v = {}
+    s = {}
+    for l in range(1, L + 1):
+        v['dW' + str(l)] = np.zeros((parameters['W' + str(l)].shape[0], parameters['W' + str(l)].shape[1]))
+        v['db' + str(l)] = np.zeros((parameters['b' + str(l)].shape[0], parameters['b' + str(l)].shape[1]))
+        s['dW' + str(l)] = np.zeros((parameters['W' + str(l)].shape[0], parameters['W' + str(l)].shape[1]))
+        s['db' + str(l)] = np.zeros((parameters['b' + str(l)].shape[0], parameters['b' + str(l)].shape[1]))
+
+    return v, s
+
+
+def update_parameters_adam(parameters, gradients, v, s, t, beta1, beta2, learning_rate):
+    """
+    Performs a gradient descent update according to the Adam optimization algorithm.
+    :param parameters: weights and bias units
+    :param gradients: partial derivatives w.r.t. the weights and the bias units
+    :param v: moving average of the gradients
+    :param s: moving average of the squared gradient (RMSprop)
+    :param beta1: exponential decay hyperparameter for v
+    :param beta2: exponential decay hyperparameter for s
+    :param learning_rate:
+    :return:
+    """
+    L = len(parameters) // 2
+
+    for l in range(1, L + 1):
+        v['dW' + str(l)] = beta1 * v['dW' + str(l)] + (1 - beta1) * gradients['dW' + str(l)]
+        v['db' + str(l)] = beta1 * v['db' + str(l)] + (1 - beta1) * gradients['db' + str(l)]
+        v_bias_corr_W = v['dW' + str(l)] / (1 - beta1**t)
+        v_bias_corr_b = v['db' + str(l)] / (1 - beta1**t)
+
+        s['dW' + str(l)] = beta2 * s['dW' + str(l)] + (1 - beta2) * gradients['dW' + str(l)]**2
+        s['db' + str(l)] = beta2 * s['db' + str(l)] + (1 - beta2) * gradients['db' + str(l)]**2
+        s_bias_corr_W = s['dW' + str(l)] / (1 - beta2**t)
+        s_bias_corr_b = s['db' + str(l)] / (1 - beta2**t)
+
+        parameters['W' + str(l)] = parameters['W' + str(l)] - learning_rate * np.divide(v_bias_corr_W, np.sqrt(s_bias_corr_W) + 1e-8)
+        parameters['b' + str(l)] = parameters['b' + str(l)] - learning_rate * np.divide(v_bias_corr_b, np.sqrt(s_bias_corr_b) + 1e-8)
+
+        return parameters, v, s
+
+
 def gradient_check(X, Y, parameters, gradients, epsilon):
     """
     Implements gradient checking in order to validate the backprop routine.
@@ -194,7 +244,7 @@ def test(X, Y, parameters):
     return accuracy
 
 
-def model(X_train, Y_train, X_test, Y_test, layers, learning_rate, epochs, mb_size, keep_prob):
+def model(X_train, Y_train, X_test, Y_test, layers, learning_rate, beta1, beta2, epochs, mb_size, keep_prob):
     """
     Implements a neural network.
     :param X: numpy array of shape (num_features, num_examples)
@@ -206,6 +256,8 @@ def model(X_train, Y_train, X_test, Y_test, layers, learning_rate, epochs, mb_si
     assert X_train.shape[0] == layers[0]
 
     parameters = init_parameters(layers)
+    v, s = init_adam(parameters)
+    t = 1
     mini_batches = get_mini_batches(X_train, Y_train, mb_size)
     costs = []
 
@@ -215,7 +267,9 @@ def model(X_train, Y_train, X_test, Y_test, layers, learning_rate, epochs, mb_si
             A_out, caches = forward_propagation(X_mb, parameters, keep_prob)
             cost = utils.cross_entropy(A_out, Y_mb)
             gradients = back_propagation(A_out, Y_mb, caches, keep_prob)
-            update_parameters(parameters, gradients, learning_rate)
+            parameters, v, s = update_parameters_adam(parameters, gradients, v, s, t, beta1, beta2, learning_rate)
+            #parameters = update_parameters(parameters, gradients, learning_rate)
+            t = t + 1
 
         print('Epoch ' + str(i) + ', ' + 'cost: ' + str(cost))
         costs.append(cost)
